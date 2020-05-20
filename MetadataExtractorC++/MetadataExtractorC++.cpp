@@ -2,24 +2,10 @@
 //
 
 #include <iostream>
-#include <Windows.h>
-#include "PEParser.h"
+#include "MetadataExtractorC++.h"
 
-class MetadataEx
-{
-public:
-	bool loadFile(const std::string& path, BYTE*& buffer, uint32_t& fileSize);
-	bool parse(const std::string& path, BYTE* buffer, size_t bufSize);
-	void resetParser();
-	
-public:
-	PEParser m_parser;
-	
-private:
-	bool openFile(const char* path, HANDLE& handle);
-	bool mapFile(HANDLE handle, BYTE* &buf);
-	void* displayErrorString(DWORD);
-};
+MetadataEx::MetadataEx(const std::string& fileName)
+	: m_fileName{ fileName } {}
 
 void* MetadataEx::displayErrorString(DWORD error)
 {
@@ -49,7 +35,7 @@ void MetadataEx::resetParser()
 bool MetadataEx::openFile(const char* path, HANDLE& handle)
 {
 	handle = CreateFileA(
-		path,    // file to open
+		path,                  // file to open
 		GENERIC_READ,          // open for reading
 		FILE_SHARE_READ,       // share for reading
 		NULL,                  // default security
@@ -133,33 +119,80 @@ bool MetadataEx::loadFile(const std::string& path, BYTE*& buffer, uint32_t& file
 	return ret;
 }
 
+bool MetadataEx::searchVersionInfoByName(
+	const std::wstring& key,
+	const version_values_t& versionInfo,
+	std::wstring& value)
+{
+	auto found{ false };
+	for (auto i : versionInfo)
+	{
+		
+		if (wcsncmp(i.first.c_str(), key.c_str(), key.size()) == 0)
+		{
+			value = i.second;
+			found = true;
+		}
+	}
+
+	if (!found)
+	{
+		std::wcout << "Resource value " << key << " not found in VS_VERSIONINFO.\n";
+	}
+	return found;
+}
+
 bool MetadataEx::parse(const std::string& path, BYTE* buffer, size_t bufSize)
 {
 	return m_parser.parse(path, buffer, bufSize);
 }
 
-int main()
+bool MetadataEx::getValueFromKey(
+	const std::wstring& key,
+	std::wstring& value)
 {
-	std::string fileName("C:\\Windows\\system32\\calc.exe");
 	BYTE* fileData = nullptr;
 	uint32_t fileSize = 0;
-	version_values_t version_info;
-
-	MetadataEx extractor;
-	auto load_ok = extractor.loadFile(fileName, fileData, fileSize);
-	auto parse_ok = load_ok ? extractor.m_parser.parse(fileName, fileData, fileSize) : false;
-	auto resource_ok = parse_ok ? extractor.m_parser.parseResourceDir((int)RT_VERSION): false;
-	auto version_ok = resource_ok ? extractor.m_parser.parseVersionInfo(version_info) : false;
-
-	if (version_ok)
+	
+	auto ret{ false };
+	if (m_versionInfo.empty())
 	{
-		std::cout << "\n*************************" << std::endl;
-		for (auto i : version_info)
+		std::cout << "VersionInfo is empty !\n";
+		if (loadFile(m_fileName, fileData, fileSize))
 		{
-			std::wcout << i.first << " = " << i.second << std::endl;
+			if (m_parser.parse(m_fileName, fileData, fileSize))
+			{
+				if (m_parser.parseResourceDir((int)RT_VERSION))
+				{
+					if (!m_parser.parseVersionInfo(m_versionInfo))
+					{
+						std::cout << "failed to extract versionInfo from PE " << m_fileName << std::endl;
+					}
+				}
+			}
 		}
-		std::cout << "*************************" << std::endl;
+	}
+	else
+	{
+		std::cout << "VersionInfo is already filled up !\n";
 	}
 	
-	return 0;
+	if (!m_versionInfo.empty())
+	{
+		ret = searchVersionInfoByName(key, m_versionInfo, value);
+	}
+	return ret;
 }
+
+bool MetadataEx::getOriginalFileName(
+	std::wstring& originalFileName)
+{
+	return getValueFromKey(std::wstring(ORIGINAL_FILENAME_STRING), originalFileName);
+}
+
+bool MetadataEx::getCompanyName(
+	std::wstring& companyName)
+{
+	return getValueFromKey(std::wstring(COMPANY_NAME_STRING), companyName);
+}
+
