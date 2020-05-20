@@ -5,6 +5,15 @@
 #define ORIGINAL_FILENAME_STRING	L"OriginalFilename"
 #define COMPANY_NAME_STRING			L"CompanyName"
 
+#define CHECK_RET_CODE(ret,ERR)\
+do {\
+if (!ret)\
+{\
+std::cout << "Failed to parse: " << ERR << std::endl; \
+goto out;\
+}\
+}while(0)
+
 class MetadataEx
 {
 public:

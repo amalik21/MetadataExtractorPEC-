@@ -105,9 +105,14 @@ using version_values_t = std::vector<version_value_t>;
 				const BYTE* pBuffer,
 				const uint32_t bufSize);
 
-			bool getResourceSection();
-            bool parseResourceDir(int resourceId);
-            bool parseVersionInfo(version_values_t& vi);
+			bool parseResourceDir(
+				int resourceId,
+				resource_section_info_t* pResourceSection);
+
+            bool parseVersionInfo(
+				resource_section_info_t* pResourceSection,
+				version_values_t& vi);
+
 			uint32_t getSubsystem();
 
         private:
@@ -127,11 +132,13 @@ using version_values_t = std::vector<version_value_t>;
             IMAGE_OPTIONAL_HEADER32* m_pOptionalHdr32;	/* Optional header 32 bit*/
             IMAGE_OPTIONAL_HEADER64* m_pOptionalHdr64;	/* Optional header 64 bit */
             IMAGE_SECTION_HEADER* m_pSectionTable;		/* Section table */
-            resource_section_info_t	m_resourceSection;
-
+            
         private:
 			bool parsePE32();
 			bool parsePE64();
+			bool getResourceSection(
+				resource_section_info_t* pResourceSection);
+
             bool getResourceDirectoryAndEntry(
                     BYTE* base,
                     unsigned long offset,

@@ -147,6 +147,7 @@ bool MetadataEx::parse(const std::string& path, BYTE* buffer, size_t bufSize)
 	return m_parser.parse(path, buffer, bufSize);
 }
 
+
 bool MetadataEx::getValueFromKey(
 	const std::wstring& key,
 	std::wstring& value)
@@ -157,19 +158,25 @@ bool MetadataEx::getValueFromKey(
 	auto ret{ false };
 	if (m_versionInfo.empty())
 	{
-		std::cout << "VersionInfo is empty !\n";
-		if (loadFile(m_fileName, fileData, fileSize))
+		try
 		{
-			if (m_parser.parse(m_fileName, fileData, fileSize))
-			{
-				if (m_parser.parseResourceDir((int)RT_VERSION))
-				{
-					if (!m_parser.parseVersionInfo(m_versionInfo))
-					{
-						std::cout << "failed to extract versionInfo from PE " << m_fileName << std::endl;
-					}
-				}
-			}
+			resource_section_info_t resourceSectionInfo{};
+			ret = loadFile(m_fileName, fileData, fileSize);
+			CHECK_RET_CODE(ret, "loadFile failed");
+
+			ret = ret && m_parser.parse(m_fileName, fileData, fileSize);
+			CHECK_RET_CODE(ret, "parse failed");
+
+			ret = ret && m_parser.parseResourceDir((int)RT_VERSION, &resourceSectionInfo);
+			CHECK_RET_CODE(ret, "parseResourceDir failed");
+
+			ret = ret && m_parser.parseVersionInfo(&resourceSectionInfo, m_versionInfo);
+			CHECK_RET_CODE(ret, "parseVersionInfo failed");
+		}
+
+		catch (const std::exception & ex)
+		{
+			std::cout << "Caught exception: " << ex.what() << std::endl;
 		}
 	}
 	else
@@ -181,6 +188,7 @@ bool MetadataEx::getValueFromKey(
 	{
 		ret = searchVersionInfoByName(key, m_versionInfo, value);
 	}
+out:
 	return ret;
 }
 
