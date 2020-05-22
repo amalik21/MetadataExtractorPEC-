@@ -126,7 +126,7 @@ using version_values_t = std::vector<version_value_t>;
 
             IMAGE_DOS_HEADER* m_pDosHdr;				/* Dos header */
             IMAGE_NT_HEADERS* m_pPeHdr;					/* PE header */
-            IMAGE_NT_HEADERS32* m_pNtHdr32;				/* Nt header 32-bit */
+			IMAGE_NT_HEADERS32* m_pNtHdr32;				/* Nt header 32-bit */
             IMAGE_NT_HEADERS64* m_pNtHdr64;				/* Nt header 64-bit */
             IMAGE_FILE_HEADER* m_pFileHdr;				/* File header */
             IMAGE_OPTIONAL_HEADER32* m_pOptionalHdr32;	/* Optional header 32 bit*/
@@ -134,8 +134,12 @@ using version_values_t = std::vector<version_value_t>;
             IMAGE_SECTION_HEADER* m_pSectionTable;		/* Section table */
             
         private:
-			bool parsePE32();
-			bool parsePE64();
+			template <typename T_IMAGE_NT_HEADER, typename T_IMAGE_OPTIONAL_HEADER>
+			bool parsePeFileType(
+				PEfileType PEfileTypeFlags,
+				T_IMAGE_NT_HEADER& pNtHdr,
+				T_IMAGE_OPTIONAL_HEADER& pOptionalHdr);
+
 			bool getResourceSection(
 				resource_section_info_t* pResourceSection);
 

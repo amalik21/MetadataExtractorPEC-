@@ -7,7 +7,8 @@
 MetadataEx::MetadataEx(const std::string& fileName)
 	: m_fileName{ fileName } {}
 
-void* MetadataEx::displayErrorString(DWORD error)
+void* MetadataEx::displayErrorString(
+	DWORD error)
 {
 	LPVOID lpMsgBuf;
 	if (!FormatMessage(
@@ -32,7 +33,9 @@ void MetadataEx::resetParser()
 	m_parser.reset();
 }
 
-bool MetadataEx::openFile(const char* path, HANDLE& handle)
+bool MetadataEx::openFile(
+	const char* path,
+	HANDLE& handle)
 {
 	handle = CreateFileA(
 		path,                  // file to open
@@ -55,7 +58,9 @@ bool MetadataEx::openFile(const char* path, HANDLE& handle)
 	return true;
 }
 
-bool MetadataEx::mapFile(HANDLE handle, BYTE*& buf)
+bool MetadataEx::mapFile(
+	HANDLE handle,
+	BYTE*& buf)
 {
 	bool ret = false;
 	void* start = NULL;
@@ -101,7 +106,10 @@ bool MetadataEx::mapFile(HANDLE handle, BYTE*& buf)
 	return ret;
 }
 
-bool MetadataEx::loadFile(const std::string& path, BYTE*& buffer, uint32_t& fileSize)
+bool MetadataEx::loadFile(
+	const std::string& path,
+	BYTE*& buffer,
+	uint32_t& fileSize)
 {
 	HANDLE handle;
 	if (!openFile(path.c_str(), handle))
@@ -146,7 +154,6 @@ bool MetadataEx::parse(const std::string& path, BYTE* buffer, size_t bufSize)
 {
 	return m_parser.parse(path, buffer, bufSize);
 }
-
 
 bool MetadataEx::getValueFromKey(
 	const std::wstring& key,
