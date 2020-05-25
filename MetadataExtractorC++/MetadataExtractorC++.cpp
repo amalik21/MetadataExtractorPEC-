@@ -4,9 +4,6 @@
 #include <iostream>
 #include "MetadataExtractorC++.h"
 
-MetadataEx::MetadataEx(const std::string& fileName)
-	: m_fileName{ fileName } {}
-
 void* MetadataEx::displayErrorString(
 	DWORD error)
 {
@@ -26,11 +23,6 @@ void* MetadataEx::displayErrorString(
 	}
 
 	return lpMsgBuf;
-}
-
-void MetadataEx::resetParser()
-{
-	m_parser.reset();
 }
 
 bool MetadataEx::openFile(
@@ -127,9 +119,10 @@ bool MetadataEx::loadFile(
 	return ret;
 }
 
+
 bool MetadataEx::searchVersionInfoByName(
-	const std::wstring& key,
 	const version_values_t& versionInfo,
+	const std::wstring& key,
 	std::wstring& value)
 {
 	auto found{ false };
@@ -150,64 +143,64 @@ bool MetadataEx::searchVersionInfoByName(
 	return found;
 }
 
-bool MetadataEx::parse(const std::string& path, BYTE* buffer, size_t bufSize)
-{
-	return m_parser.parse(path, buffer, bufSize);
-}
-
-bool MetadataEx::getValueFromKey(
-	const std::wstring& key,
-	std::wstring& value)
+bool MetadataEx::getVersionInformation(
+	const std::string& fileName,
+	versionInformationMap& entity)
 {
 	BYTE* fileData = nullptr;
 	uint32_t fileSize = 0;
-	
+	version_values_t versionInfo;
+
 	auto ret{ false };
-	if (m_versionInfo.empty())
+	try
 	{
-		try
-		{
-			resource_section_info_t resourceSectionInfo{};
-			ret = loadFile(m_fileName, fileData, fileSize);
-			CHECK_RET_CODE(ret, "loadFile failed");
+		resource_section_info_t resourceSectionInfo{};
+		PEParser parser;
 
-			ret = ret && m_parser.parse(m_fileName, fileData, fileSize);
-			CHECK_RET_CODE(ret, "parse failed");
+		ret = loadFile(fileName, fileData, fileSize);
+		CHECK_RET_CODE(ret, "loadFile failed");
 
-			ret = ret && m_parser.parseResourceDir((int)RT_VERSION, &resourceSectionInfo);
-			CHECK_RET_CODE(ret, "parseResourceDir failed");
+		ret = ret && parser.parse(fileName, fileData, fileSize);
+		CHECK_RET_CODE(ret, "parse failed");
 
-			ret = ret && m_parser.parseVersionInfo(&resourceSectionInfo, m_versionInfo);
-			CHECK_RET_CODE(ret, "parseVersionInfo failed");
-		}
+		ret = ret && parser.parseResourceDir(RT_VERSION, &resourceSectionInfo);
+		CHECK_RET_CODE(ret, "parseResourceDir failed");
 
-		catch (const std::exception & ex)
-		{
-			std::cout << "Caught exception: " << ex.what() << std::endl;
-		}
+		ret = ret && parser.parseVersionInfo(&resourceSectionInfo, versionInfo);
+		CHECK_RET_CODE(ret, "parseVersionInfo failed");
 	}
-	else
+
+	catch (const std::exception & ex)
 	{
-		std::cout << "VersionInfo is already filled up !\n";
+		std::cout << "Caught exception: " << ex.what() << std::endl;
 	}
-	
-	if (!m_versionInfo.empty())
+
+#ifdef _DEBUG
+	std::cout << "\nPrinting everything ==>\n";
+	for (auto i : versionInfo)
 	{
-		ret = searchVersionInfoByName(key, m_versionInfo, value);
+		std::wcout << i.first << " = " << i.second << std::endl;
+	}
+	std::cout << "\n";
+#endif
+
+	if (!versionInfo.empty())
+	{
+		UPDATE_VERSION_INFO(versionInfo, std::wstring(ORIGINAL_FILENAME_STRING),
+			ITEM_ID_VERSION_RESOURCE_ORIGINAL_FILE_NAME, entity);
+
+		UPDATE_VERSION_INFO(versionInfo, std::wstring(COMPANY_NAME_STRING),
+			ITEM_ID_VERSION_RESOURCE_COMPANY_NAME, entity);
+
+		UPDATE_VERSION_INFO(versionInfo, std::wstring(PRODUCT_NAME_STRING),
+			ITEM_ID_VERSION_RESOURCE_PRODUCT_NAME, entity);
+
+		UPDATE_VERSION_INFO(versionInfo, std::wstring(PRODUCT_VERSION_STRING),
+			ITEM_ID_VERSION_RESOURCE_PRODUCT_VERSION, entity);
+
+		UPDATE_VERSION_INFO(versionInfo, std::wstring(FILE_VERSION_STRING),
+			ITEM_ID_VERSION_RESOURCE_FILE_VERSION, entity);
 	}
 out:
 	return ret;
 }
-
-bool MetadataEx::getOriginalFileName(
-	std::wstring& originalFileName)
-{
-	return getValueFromKey(std::wstring(ORIGINAL_FILENAME_STRING), originalFileName);
-}
-
-bool MetadataEx::getCompanyName(
-	std::wstring& companyName)
-{
-	return getValueFromKey(std::wstring(COMPANY_NAME_STRING), companyName);
-}
-

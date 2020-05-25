@@ -106,7 +106,7 @@ using version_values_t = std::vector<version_value_t>;
 				const uint32_t bufSize);
 
 			bool parseResourceDir(
-				int resourceId,
+				LPWSTR resourceId,
 				resource_section_info_t* pResourceSection);
 
             bool parseVersionInfo(

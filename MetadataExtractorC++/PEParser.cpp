@@ -234,7 +234,7 @@
     }
 
 	bool PEParser::parseResourceDir(
-		int resourceId,
+		LPWSTR resourceId,
 		resource_section_info_t* pResourceSection)
     {
         auto ret{ false };
@@ -282,7 +282,7 @@
                 {
                     if (pTempDirEntry &&
                             pTempDirEntry->DataIsDirectory &&
-                            pTempDirEntry->Id == resourceId)
+                            pTempDirEntry->Id == (size_t)resourceId)
                     {
                         found = true;
                         break;

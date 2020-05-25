@@ -152,7 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Documents\GitHub\uc-master\uc\UCService\PEParser.cpp" />
+    <ClCompile Include="..\..\..\..\Documents\GitHub\uc-master\PEParser.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MetadataExtractorC++.cpp" />
   </ItemGroup>
